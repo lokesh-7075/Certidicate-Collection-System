@@ -784,30 +784,49 @@ function App() {
   }
 
   return (
-    <div className="faculty-layout">
-      <aside className="faculty-sidebar">
-        <img 
-          src={state.currentUser.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}`}
-          alt="Profile" 
-          onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
-        />
-        <h3>{state.currentUser.name}</h3>
-        <p className="role">{state.currentUser.role.toUpperCase()}</p>
-        {state.currentUser.phone && <p className="phone">PH: {state.currentUser.phone}</p>}
-        
-        <div style={{ marginTop: 'auto', display: 'flex', gap: 10 }}>
-          <button className="notice-btn" title="Settings" onClick={() => setShowSettingsModal(true)}>⚙️ Settings</button>
-          <button className="ghost-btn" onClick={logout} style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}>Logout</button>
-        </div>
-      </aside>
-
-      <div className="faculty-content-area">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">{state.currentUser.role === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}</h2>
-          <div className="flex gap-4">
-            <button className="notice-btn">🔔 {notifications.length}</button>
+    <div className="shell">
+      <div className="topbar">
+        <div className="flex items-center gap-4">
+          <button className="nav-toggle" onClick={() => setSidebarOpen((open) => !open)} style={{ fontSize: '1.5rem', background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer' }}>☰</button>
+          <div className="text-white text-lg font-bold flex items-center gap-3">
+            <div className="text-2xl">🛡️</div>
+            <div>
+              <div className="text-xs font-bold">VIGNAN'S</div>
+              <div className="text-xs text-white/70">FSTR</div>
+            </div>
+          </div>
+          <div className="mx-auto text-center flex-1">
+            <div className="text-2xl font-bold text-blue-300" style={{textShadow: '0 0 10px rgba(59, 130, 246, 0.6)'}}>
+              {state.currentUser.role === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}
+            </div>
           </div>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img 
+            src={state.currentUser.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}`}
+            alt="Profile" 
+            title="Edit Profile & Settings"
+            onClick={() => setShowSettingsModal(true)}
+            style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'transform 0.2s' }}
+            onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
+            onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+            onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
+          />
+          <button className="notice-btn" title="Notifications">🔔 {notifications.length}</button>
+          <button className="ghost-btn" onClick={logout}>Logout</button>
+        </div>
+      </div>
+
+      <div className={`overlay ${sidebarOpen ? 'show' : ''}`} onClick={() => setSidebarOpen(false)} />
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} style={{ backgroundColor: '#4B0082', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+        <h3 style={{ color: '#fff' }}>Menu</h3>
+        <a href="#" className="nav-link active" onClick={(e) => e.preventDefault()}>Dashboard</a>
+        <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); setShowSettingsModal(true); setSidebarOpen(false); }}>Profile & Settings</a>
+        <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '16px 0' }} />
+        <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); logout(); }}>Logout</a>
+      </aside>
+
+      <div style={{ padding: '24px 32px' }}>
 
       {showSettingsModal && (
         <div className="modal-backdrop" onClick={() => setShowSettingsModal(false)}>
