@@ -784,34 +784,30 @@ function App() {
   }
 
   return (
-    <div className="shell">
-      <div className="topbar">
-        <div className="flex items-center gap-4">
-          <div className="text-white text-lg font-bold flex items-center gap-3">
-            <div className="text-2xl">🛡️</div>
-            <div>
-              <div className="text-xs font-bold">VIGNAN'S</div>
-              <div className="text-xs text-white/70">FSTR</div>
-            </div>
-          </div>
-          <div className="mx-auto text-center flex-1">
-            <div className="text-2xl font-bold text-blue-300" style={{textShadow: '0 0 10px rgba(59, 130, 246, 0.6)'}}>IT</div>
-          </div>
-          <div><h2>{state.currentUser.role} Dashboard</h2></div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="notice-btn">🔔</button>
-          <span className="badge pending">{notifications.length} alerts</span>
-          <button className="ghost-btn" onClick={logout}>Logout</button>
-        </div>
-      </div>
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold">{state.currentUser.role === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}</h2>
-        <div className="flex gap-4">
+    <div className="faculty-layout">
+      <aside className="faculty-sidebar">
+        <img 
+          src={state.currentUser.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}`}
+          alt="Profile" 
+          onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
+        />
+        <h3>{state.currentUser.name}</h3>
+        <p className="role">{state.currentUser.role.toUpperCase()}</p>
+        {state.currentUser.phone && <p className="phone">PH: {state.currentUser.phone}</p>}
+        
+        <div style={{ marginTop: 'auto', display: 'flex', gap: 10 }}>
           <button className="notice-btn" title="Settings" onClick={() => setShowSettingsModal(true)}>⚙️ Settings</button>
-          <button className="ghost-btn" onClick={logout}>Logout</button>
+          <button className="ghost-btn" onClick={logout} style={{ color: '#1a1a1a', border: '1px solid #1a1a1a' }}>Logout</button>
         </div>
-      </div>
+      </aside>
+
+      <div className="faculty-content-area">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold">{state.currentUser.role === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}</h2>
+          <div className="flex gap-4">
+            <button className="notice-btn">🔔 {notifications.length}</button>
+          </div>
+        </div>
 
       {showSettingsModal && (
         <div className="modal-backdrop" onClick={() => setShowSettingsModal(false)}>
@@ -1076,6 +1072,7 @@ function App() {
           </section>
         </>
       )}
+      </div>
     </div>
   );
 }
