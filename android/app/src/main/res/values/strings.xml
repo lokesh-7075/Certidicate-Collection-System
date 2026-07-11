@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ITCertiOD</string>
+    <string name="title_activity_main">ITCertiOD</string>
+    <string name="package_name">com.itcertiod.app</string>
+    <string name="custom_url_scheme">com.itcertiod.app</string>
+</resources>
