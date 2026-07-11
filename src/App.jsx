@@ -797,7 +797,7 @@ function App() {
         
         <div style={{ marginTop: 'auto', display: 'flex', gap: 10 }}>
           <button className="notice-btn" title="Settings" onClick={() => setShowSettingsModal(true)}>⚙️ Settings</button>
-          <button className="ghost-btn" onClick={logout} style={{ color: '#1a1a1a', border: '1px solid #1a1a1a' }}>Logout</button>
+          <button className="ghost-btn" onClick={logout} style={{ color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}>Logout</button>
         </div>
       </aside>
 
