@@ -432,3 +432,45 @@ export async function updateFacultyProfile(user, body) {
   return { ok: true, updated: updates, token };
 }
 
+export async function listApplicationsForBosa() {
+  const db = getDb();
+  const apps = await db.collection('requests').find({}).sort({ createdAt: -1 }).toArray();
+  return { ok: true, applications: apps.map(formatApplication) };
+}
+
+export async function listApplicationsForHod() {
+  const db = getDb();
+  const apps = await db.collection('requests').find({ forwarded: true }).sort({ createdAt: -1 }).toArray();
+  return { ok: true, applications: apps.map(formatApplication) };
+}
+
+export async function registerBosaMember(user, { facultyId, name, password, department }) {
+  if (user.role !== 'dean' && user.role !== 'bosa') throw new Error('Not authorized to add BOSA members');
+  const db = getDb();
+  const existing = await db.collection('users').findOne({ facultyId: String(facultyId).trim() });
+  if (existing) throw new Error('Faculty ID already exists');
+  const passwordHash = await bcrypt.hash(String(password), 10);
+  const doc = {
+    _id: new ObjectId(),
+    uid: `faculty-dean-${new ObjectId().toString().slice(-6)}`,
+    role: 'dean',
+    facultyId: String(facultyId).trim(),
+    displayName: String(name).trim(),
+    department: String(department || 'IT').trim(),
+    passwordHash,
+    createdAt: new Date(),
+  };
+  await db.collection('users').insertOne(doc);
+  return { ok: true, uid: doc.uid };
+}
+
+export async function changeFacultyPassword(user, { currentPassword, newPassword }) {
+  const db = getDb();
+  const dbUser = await db.collection('users').findOne({ uid: user.uid });
+  if (!dbUser) throw new Error('User not found');
+  const ok = await bcrypt.compare(String(currentPassword), dbUser.passwordHash);
+  if (!ok) throw new Error('Incorrect current password');
+  const passwordHash = await bcrypt.hash(String(newPassword), 10);
+  await db.collection('users').updateOne({ uid: user.uid }, { $set: { passwordHash } });
+  return { ok: true };
+}

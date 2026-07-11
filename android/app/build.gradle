@@ -3,6 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.itcertiod.app"
     compileSdk = rootProject.ext.compileSdkVersion
+
     defaultConfig {
         applicationId "com.itcertiod.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -10,21 +11,29 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
         aaptOptions {
-             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
-             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            // Files and dirs to omit from the packaged assets dir
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 repositories {
+    google()
+    mavenCentral()
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
@@ -33,40 +42,55 @@ repositories {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
-    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
-    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
-
-    // Added to fix AndroidX version compatibility
-    implementation "androidx.activity:activity-ktx:1.9.3"
+    // We use hardcoded stable versions here to fix the "Failed to fetch" errors
+    implementation "androidx.appcompat:appcompat:1.6.1"
     implementation "androidx.core:core-ktx:1.13.1"
-    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "androidx.activity:activity-ktx:1.9.3"
+
+    implementation "androidx.coordinatorlayout:coordinatorlayout:1.2.0"
+    implementation "androidx.core:core-splashscreen:1.0.1"
 
     implementation project(':capacitor-android')
-
-    testImplementation "junit:junit:$junitVersion"
-    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
-
     implementation project(':capacitor-cordova-android-plugins')
+
+    testImplementation "junit:junit:4.13.2"
+    androidTestImplementation "androidx.test.ext:junit:1.1.5"
+    androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
 }
 
 apply from: 'capacitor.build.gradle'
 
+// Fixed the Google Services check to prevent crashes
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    if (servicesJSON.exists()) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.info("google-services.json not found")
 }
 
+// CRITICAL FIX: This forces all plugins to stay on versions compatible with AGP 8.7.0
 configurations.all {
     resolutionStrategy {
-        force 'androidx.activity:activity:1.9.3'
-        force 'androidx.activity:activity-ktx:1.9.3'
+        // Fix for the AndroidX errors we fixed earlier
         force 'androidx.core:core:1.13.1'
         force 'androidx.core:core-ktx:1.13.1'
+        force 'androidx.activity:activity:1.9.3'
+        force 'androidx.activity:activity-ktx:1.9.3'
+        force 'androidx.appcompat:appcompat:1.6.1'
+        force 'androidx.lifecycle:lifecycle-runtime:2.6.2'
+
+        // NEW FIX: Force all Kotlin modules to use the same version (1.8.22)
+        // This prevents the "Duplicate Class" error
+        eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion "1.8.22"
+            }
+        }
     }
+// NEW FIX: Manually exclude the old JDK7 and JDK8 modules
+// because they are already included in the 1.8.22 stdlib
+exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
 }

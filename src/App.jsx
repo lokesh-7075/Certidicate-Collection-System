@@ -119,6 +119,9 @@ function App() {
   const [nptelOd, setNptelOd] = useState(false);
 
   const [bosaDecisions, setBosaDecisions] = useState({});
+  const [submitState, setSubmitState] = useState({});
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [newBosaData, setNewBosaData] = useState({ facultyId: '', name: '', password: '', department: 'IT' });
 
   useEffect(() => {
     // Restore session and then poll Mongo API every few seconds.
@@ -310,6 +313,7 @@ function App() {
 
   const submitForm = (event, formType) => {
     event.preventDefault();
+    setSubmitState(prev => ({ ...prev, [formType]: 'loading' }));
     const currentTarget = event.currentTarget;
     (async () => {
       try {
@@ -344,8 +348,13 @@ function App() {
           attachmentUrl: fileDataUrl,
           attachmentName: fileName || 'Uploaded attachment',
         });
-        setMessage('Submission created and sent to BOSA Member.');
+        setSubmitState(prev => ({ ...prev, [formType]: 'success' }));
+        currentTarget.reset();
+        setTimeout(() => {
+          setSubmitState(prev => ({ ...prev, [formType]: null }));
+        }, 3500);
       } catch (err) {
+        setSubmitState(prev => ({ ...prev, [formType]: null }));
         setMessage(err.message || 'Submission failed');
       }
     })();
@@ -683,7 +692,7 @@ function App() {
         <section id="student-forms" className="form-card" style={{ marginBottom: 28 }}>
           <h3>Submit New Achievement</h3>
           <div className="form-grid" style={{ marginTop: 16 }}>
-            <div className="card" style={{ padding: 16 }}>
+            <div className="card card-gradient-blue" style={{ padding: 16 }}>
               <h4>Technical</h4>
               <form onSubmit={(event) => submitForm(event, 'technical')}>
                 <label>Foundation / Company / Website<input name="eventName" required /></label>
@@ -694,10 +703,12 @@ function App() {
                 <div className="switch-row"><span>OD Request</span><label className="switch"><input type="checkbox" name="odRequested" value="1" checked={techOd} onChange={(e) => setTechOd(e.target.checked)} /><span className="slider" /></label></div>
                 {techOd && <label>Comment<textarea name="odComment" placeholder="Provide OD reason..." /></label>}
                 <label>Certificate Attachment<input type="file" name="attachment" accept="image/*,.pdf" required /></label>
-                <button className="primary-btn" type="submit">Submit Technical</button>
+                <button className={`primary-btn ${submitState['technical'] === 'success' ? 'btn-success' : ''}`} type="submit" disabled={submitState['technical'] === 'loading'}>
+                  {submitState['technical'] === 'success' ? 'Submitted! ✓' : submitState['technical'] === 'loading' ? 'Submitting...' : 'Submit Technical'}
+                </button>
               </form>
             </div>
-            <div className="card" style={{ padding: 16 }}>
+            <div className="card card-gradient-purple" style={{ padding: 16 }}>
               <h4>Extra-Curricular</h4>
               <form onSubmit={(event) => submitForm(event, 'extra')}>
                 <label>Field<input name="field" placeholder="Sports / Dramatics / Dance" required /></label>
@@ -706,10 +717,12 @@ function App() {
                 <div className="switch-row"><span>OD Request</span><label className="switch"><input type="checkbox" name="odRequested" value="1" checked={extraOd} onChange={(e) => setExtraOd(e.target.checked)} /><span className="slider" /></label></div>
                 {extraOd && <label>Comment<textarea name="odComment" placeholder="Provide OD reason..." /></label>}
                 <label>Certificate Attachment<input type="file" name="attachment" accept="image/*,.pdf" required /></label>
-                <button className="primary-btn" type="submit">Submit Extra-Curricular</button>
+                <button className={`primary-btn ${submitState['extra'] === 'success' ? 'btn-success' : ''}`} type="submit" disabled={submitState['extra'] === 'loading'}>
+                  {submitState['extra'] === 'success' ? 'Submitted! ✓' : submitState['extra'] === 'loading' ? 'Submitting...' : 'Submit Extra-Curricular'}
+                </button>
               </form>
             </div>
-            <div className="card" style={{ padding: 16 }}>
+            <div className="card card-gradient-pink" style={{ padding: 16 }}>
               <h4>Co-Curricular</h4>
               <form onSubmit={(event) => submitForm(event, 'co')}>
                 <label>Domain<input name="domain" placeholder="Minethon / Hackathon / Interview" required /></label>
@@ -719,13 +732,15 @@ function App() {
                 <div className="switch-row"><span>OD Request</span><label className="switch"><input type="checkbox" name="odRequested" value="1" checked={coOd} onChange={(e) => setCoOd(e.target.checked)} /><span className="slider" /></label></div>
                 {coOd && <label>Comment<textarea name="odComment" placeholder="Provide OD reason..." /></label>}
                 <label>Certificate Attachment<input type="file" name="attachment" accept="image/*,.pdf" required /></label>
-                <button className="primary-btn" type="submit">Submit Co-Curricular</button>
+                <button className={`primary-btn ${submitState['co'] === 'success' ? 'btn-success' : ''}`} type="submit" disabled={submitState['co'] === 'loading'}>
+                  {submitState['co'] === 'success' ? 'Submitted! ✓' : submitState['co'] === 'loading' ? 'Submitting...' : 'Submit Co-Curricular'}
+                </button>
               </form>
             </div>
           </div>
         </section>
         
-        <section className="form-card" style={{ marginBottom: 28 }}>
+        <section className="form-card card-gradient-teal" style={{ marginBottom: 28 }}>
           <h3>NPTEL / Self-Paced Academic</h3>
           <form onSubmit={(event) => submitForm(event, 'nptel')} style={{ display: 'grid', gap: 12, marginTop: 16 }}>
             <label>Subject Name<input name="subjectName" required /></label>
@@ -735,7 +750,9 @@ function App() {
             <div className="switch-row"><span>OD Request</span><label className="switch"><input type="checkbox" name="odRequested" value="1" checked={nptelOd} onChange={(e) => setNptelOd(e.target.checked)} /><span className="slider" /></label></div>
             {nptelOd && <label>Comment<textarea name="odComment" placeholder="Provide OD reason..." /></label>}
             <label>Certificate Attachment<input type="file" name="attachment" accept="image/*,.pdf" required /></label>
-            <button className="primary-btn" type="submit">Submit NPTEL</button>
+            <button className={`primary-btn ${submitState['nptel'] === 'success' ? 'btn-success' : ''}`} type="submit" disabled={submitState['nptel'] === 'loading'}>
+              {submitState['nptel'] === 'success' ? 'Submitted! ✓' : submitState['nptel'] === 'loading' ? 'Submitting...' : 'Submit NPTEL'}
+            </button>
           </form>
         </section>
 
@@ -788,103 +805,241 @@ function App() {
           <button className="ghost-btn" onClick={logout}>Logout</button>
         </div>
       </div>
-      <section className="profile-card" style={{ marginBottom: 16 }}>
-        <div className="grid-2">
-          <div>
-            <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginBottom: 16 }}>
-              <img 
-                src={state.currentUser.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}`}
-                alt="Profile" 
-                style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}
-                onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
-              />
-              <div>
-                <h3>{state.currentUser.name}</h3>
-                <p className="muted">{state.currentUser.role} • {state.currentUser.department}</p>
-                <p className="muted">Phone: {state.currentUser.phone} • Gender: {state.currentUser.gender}</p>
-                <div className="meta"><span className="tag">Faculty Profile</span><span className="tag">Role-based Review</span></div>
-              </div>
-            </div>
-            {(state.currentRole === 'hod' || state.currentRole === 'dean') && (
-              <div style={{ marginTop: 12 }}>
-                <h4 className="muted">Edit Faculty Profile</h4>
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  const currentTarget = e.currentTarget;
-                  const data = Object.fromEntries(new FormData(currentTarget));
-                  const file = currentTarget.profileImage && currentTarget.profileImage.files && currentTarget.profileImage.files[0];
-                  try {
-                    if (file && file.size > 800 * 1024) {
-                      setMessage('Profile image exceeds 800KB limit.');
-                      return;
-                    }
-                    
-                    let fileDataUrl = undefined;
-                    if (file) {
-                      fileDataUrl = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onload = () => resolve(reader.result);
-                        reader.onerror = (err) => reject(err);
-                        reader.readAsDataURL(file);
-                      });
-                    }
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold">{state.currentUser.role === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}</h2>
+        <div className="flex gap-4">
+          <button className="notice-btn" title="Settings" onClick={() => setShowSettingsModal(true)}>⚙️ Settings</button>
+          <button className="ghost-btn" onClick={logout}>Logout</button>
+        </div>
+      </div>
 
-                    const res = await updateFacultyProfile({ 
-                      uid: state.currentUser.id, 
-                      displayName: data.displayName || state.currentUser.name, 
-                      phoneNumber: data.phone || state.currentUser.phone, 
-                      gender: data.gender || state.currentUser.gender, 
-                      department: state.currentUser.department, 
-                      profileImageUrl: fileDataUrl 
-                    });
-                    const updatedFields = res.updated || {};
-                    const updatedProfile = { 
-                      ...state.currentUser, 
-                      name: updatedFields.displayName || data.displayName || state.currentUser.name, 
-                      phone: updatedFields.phoneNumber || data.phone || state.currentUser.phone, 
-                      gender: updatedFields.gender || data.gender || state.currentUser.gender, 
-                      profileImage: updatedFields.profileImageUrl || state.currentUser.profileImage 
-                    };
-                    if (res?.token) {
-                      setToken(res.token);
-                    }
-                    saveState({ ...state, currentUser: updatedProfile, faculty: state.faculty.map(f => f.id === state.currentUser.id ? { ...f, ...updatedProfile } : f) });
-                    setMessage('Profile updated.');
-                  } catch (err) {
-                    setMessage(err.message || 'Profile update failed');
-                  }
-                }}>
-                  <label className="block">Display Name<input name="displayName" defaultValue={state.currentUser.name} /></label>
-                  <label className="block">Phone<input name="phone" defaultValue={state.currentUser.phone || ''} /></label>
-                  <label className="block">Gender<select name="gender" defaultValue={state.currentUser.gender || ''}><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></label>
-                  <label className="block">Profile Image (Max 800KB)
-                      <input type="file" name="profileImage" accept="image/*" />
-                  </label>
-                  <div style={{ marginTop: 8 }}>
-                    <button className="primary-btn" type="submit">Save Profile</button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </div>
-          <div className="panel" style={{ padding: 16 }}>
-            <h4>Notifications</h4>
-            <ul>{notifications.length ? notifications.slice(0, 3).map((note) => <li key={note.id}>{note.message}</li>) : <li>No notifications.</li>}</ul>
+      {showSettingsModal && (
+        <div className="modal-backdrop" onClick={() => setShowSettingsModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-2xl font-bold">Profile & Settings</h3>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = Object.fromEntries(new FormData(e.currentTarget));
+              const file = e.currentTarget.profileImage?.files?.[0];
+              try {
+                if (file && file.size > 800 * 1024) throw new Error('Profile image exceeds 800KB limit.');
+                let fileDataUrl = undefined;
+                if (file) {
+                  fileDataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (err) => reject(err);
+                    reader.readAsDataURL(file);
+                  });
+                }
+                const res = await updateFacultyProfile({ 
+                  uid: state.currentUser.id, 
+                  displayName: formData.displayName || state.currentUser.name, 
+                  phoneNumber: formData.phone || state.currentUser.phone, 
+                  gender: formData.gender || state.currentUser.gender, 
+                  profileImageUrl: fileDataUrl 
+                });
+                if (res?.token) setToken(res.token);
+                setMessage('Profile updated.');
+                setShowSettingsModal(false);
+              } catch (err) {
+                setMessage(err.message || 'Profile update failed');
+              }
+            }}>
+              <label>Name<input name="displayName" defaultValue={state.currentUser.name} /></label>
+              <label>Phone<input name="phone" defaultValue={state.currentUser.phone} /></label>
+              <label>Gender<select name="gender" defaultValue={state.currentUser.gender}><option>Male</option><option>Female</option><option>Other</option></select></label>
+              <label>Profile Image<input type="file" name="profileImage" accept="image/*" /></label>
+              <button className="primary-btn mt-4 w-full" type="submit">Update Profile</button>
+            </form>
+
+            <hr className="my-6 border-white/10" />
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = Object.fromEntries(new FormData(e.currentTarget));
+              try {
+                const { changeFacultyPassword } = await import('./api/mongoApi.js');
+                await changeFacultyPassword({ currentPassword: formData.currentPassword, newPassword: formData.newPassword });
+                setMessage('Password updated successfully.');
+                e.currentTarget.reset();
+              } catch (err) {
+                setMessage(err.message || 'Password update failed');
+              }
+            }}>
+              <h4 className="mb-2">Change Password</h4>
+              <label>Current Password<input name="currentPassword" type="password" required /></label>
+              <label>New Password<input name="newPassword" type="password" required /></label>
+              <button className="primary-btn mt-4 w-full" type="submit">Update Password</button>
+            </form>
           </div>
         </div>
-      </section>
-      <section className="grid-2">
-        <div className="panel" style={{ padding: 16 }}>
-          <h3>BOSA Member Pending Requests</h3>
-          {pendingBosa.length ? pendingBosa.map((entry) => {
-            const dec = getBosaDecision(entry.id, entry.odRequested);
-            return (
-              <div className="queue-card" key={entry.id} style={{ marginBottom: 12 }}>
+      )}
+
+      {state.currentRole === 'dean' && (
+        <>
+          <div className="grid-3 mb-8">
+            <div className="card card-gradient-blue p-6">
+              <h3 className="text-2xl font-bold">{pendingBosa.length}</h3>
+              <p className="muted">Pending Approvals</p>
+            </div>
+            <div className="card card-gradient-purple p-6">
+              <h3 className="text-2xl font-bold">{facultyApplications.length - pendingBosa.length}</h3>
+              <p className="muted">Processed Applications</p>
+            </div>
+            <div className="card card-gradient-pink p-6">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const { registerBosaMember } = await import('./api/mongoApi.js');
+                  await registerBosaMember(newBosaData);
+                  setMessage('BOSA Member added successfully.');
+                  setNewBosaData({ facultyId: '', name: '', password: '', department: 'IT' });
+                } catch (err) {
+                  setMessage(err.message || 'Failed to add BOSA Member');
+                }
+              }}>
+                <h4 className="mb-2 font-bold">Add BOSA Member</h4>
+                <div className="flex gap-2">
+                  <input placeholder="Faculty ID" value={newBosaData.facultyId} onChange={e => setNewBosaData(p => ({...p, facultyId: e.target.value}))} required />
+                  <input placeholder="Name" value={newBosaData.name} onChange={e => setNewBosaData(p => ({...p, name: e.target.value}))} required />
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <input type="password" placeholder="Password" value={newBosaData.password} onChange={e => setNewBosaData(p => ({...p, password: e.target.value}))} required />
+                  <button className="primary-btn" type="submit">Add</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <section className="panel" style={{ padding: 16 }}>
+            <h3>BOSA Member Pending Requests</h3>
+            {pendingBosa.length ? pendingBosa.map((entry) => {
+              const dec = getBosaDecision(entry.id, entry.odRequested);
+              return (
+                <div className="queue-card card-gradient-blue" key={entry.id} style={{ marginBottom: 12 }}>
+                  <h4>{entry.studentName}</h4>
+                  <p className="small muted">{entry.regNumber} • {entry.year} • {entry.semester}</p>
+                  <p className="small">Category: {entry.category.toUpperCase()}</p>
+                  <p className="small">OD Requested: {entry.odRequested ? 'Yes' : 'No'}</p>
+                  {entry.odRequested ? <p className="small">Comment: {entry.odComment || 'No comment provided.'}</p> : null}
+                  <p className="small">
+                    Attachment:{' '}
+                    {entry.attachmentUrl ? (
+                      <a href={entry.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                        {entry.attachmentName || 'View Document'}
+                      </a>
+                    ) : (
+                      entry.attachmentName || 'No attachment'
+                    )}
+                  </p>
+                  
+                  {/* BOSA Decision Panel */}
+                  <div style={{ display: 'grid', gap: 12, margin: '16px 0', padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span className="small font-semibold">Certificate Validity:</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button 
+                          type="button"
+                          className="ghost-btn small" 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', background: dec.certValid ? 'rgba(52, 211, 153, 0.15)' : '', borderColor: dec.certValid ? '#34d399' : '', color: dec.certValid ? '#34d399' : '' }}
+                          onClick={() => setBosaDecisionField(entry.id, 'certValid', true)}
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          type="button"
+                          className="ghost-btn small" 
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', background: !dec.certValid ? 'rgba(239, 68, 68, 0.15)' : '', borderColor: !dec.certValid ? '#f87171' : '', color: !dec.certValid ? '#f87171' : '' }}
+                          onClick={() => setBosaDecisionField(entry.id, 'certValid', false)}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+
+                    {entry.odRequested && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span className="small font-semibold">On-Duty (OD) Status:</span>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button 
+                            type="button"
+                            className="ghost-btn small" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', background: dec.odGrant ? 'rgba(59, 130, 246, 0.15)' : '', borderColor: dec.odGrant ? '#3b82f6' : '', color: dec.odGrant ? '#3b82f6' : '' }}
+                            onClick={() => setBosaDecisionField(entry.id, 'odGrant', true)}
+                          >
+                            Grant OD
+                          </button>
+                          <button 
+                            type="button"
+                            className="ghost-btn small" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', background: !dec.odGrant ? 'rgba(239, 68, 68, 0.15)' : '', borderColor: !dec.odGrant ? '#f87171' : '', color: !dec.odGrant ? '#f87171' : '' }}
+                            onClick={() => setBosaDecisionField(entry.id, 'odGrant', false)}
+                          >
+                            Deny OD
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: 0 }}>
+                      <span className="small font-semibold">BOSA Comment:</span>
+                      <input 
+                        type="text" 
+                        value={dec.bosaComment} 
+                        onChange={(e) => setBosaDecisionField(entry.id, 'bosaComment', e.target.value)} 
+                        placeholder="Optional review comment..."
+                        style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="meta">
+                    <button className="primary-btn" onClick={async () => {
+                      try {
+                        const finalDecision = dec.certValid ? 'approved' : 'rejected';
+                        await bosaProcessApplication(entry.id, finalDecision, dec.odGrant, dec.bosaComment);
+                        setMessage(dec.certValid ? 'Application approved and forwarded to HoD.' : 'Application rejected and completed.');
+                      } catch (err) {
+                        setMessage(err.message || 'BOSA Member approval failed');
+                      }
+                    }}>Approve & Forward</button>
+                    <button className="danger-btn" onClick={async () => {
+                      try {
+                        await bosaProcessApplication(entry.id, 'rejected', false, dec.bosaComment);
+                        setMessage('Application rejected.');
+                      } catch (err) {
+                        setMessage(err.message || 'BOSA Member rejection failed');
+                      }
+                    }}>Reject Submission</button>
+                  </div>
+                </div>
+              );
+            }) : <p>No requests pending at BOSA Member stage.</p>}
+          </section>
+        </>
+      )}
+
+      {state.currentRole === 'hod' && (
+        <>
+          <div className="grid-2 mb-8">
+            <div className="card card-gradient-teal p-6">
+              <h3 className="text-2xl font-bold">{pendingHod.length}</h3>
+              <p className="muted">Requests to Review</p>
+            </div>
+            <div className="card card-gradient-purple p-6">
+              <h3 className="text-2xl font-bold">{facultyApplications.length - pendingHod.length}</h3>
+              <p className="muted">Total Processed</p>
+            </div>
+          </div>
+          <section className="panel" style={{ padding: 16 }}>
+            <h3>HoD Pending Queue</h3>
+            {pendingHod.length ? pendingHod.map((entry) => (
+              <div className="queue-card card-gradient-teal" key={entry.id} style={{ marginBottom: 12 }}>
                 <h4>{entry.studentName}</h4>
                 <p className="small muted">{entry.regNumber} • {entry.year} • {entry.semester}</p>
-                <p className="small">Category: {entry.category.toUpperCase()}</p>
-                <p className="small">OD Requested: {entry.odRequested ? 'Yes' : 'No'}</p>
-                {entry.odRequested ? <p className="small">Comment: {entry.odComment || 'No comment provided.'}</p> : null}
+                <p className="small">Category: {entry.category}</p>
                 <p className="small">
                   Attachment:{' '}
                   {entry.attachmentUrl ? (
@@ -895,132 +1050,32 @@ function App() {
                     entry.attachmentName || 'No attachment'
                   )}
                 </p>
-                
-                {/* BOSA Decision Panel */}
-                <div style={{ display: 'grid', gap: 12, margin: '16px 0', padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span className="small font-semibold">Certificate Validity:</span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button 
-                        type="button"
-                        className="ghost-btn small" 
-                        style={{ padding: '6px 12px', fontSize: '0.8rem', background: dec.certValid ? 'rgba(52, 211, 153, 0.15)' : '', borderColor: dec.certValid ? '#34d399' : '', color: dec.certValid ? '#34d399' : '' }}
-                        onClick={() => setBosaDecisionField(entry.id, 'certValid', true)}
-                      >
-                        Approve
-                      </button>
-                      <button 
-                        type="button"
-                        className="ghost-btn small" 
-                        style={{ padding: '6px 12px', fontSize: '0.8rem', background: !dec.certValid ? 'rgba(239, 68, 68, 0.15)' : '', borderColor: !dec.certValid ? '#f87171' : '', color: !dec.certValid ? '#f87171' : '' }}
-                        onClick={() => setBosaDecisionField(entry.id, 'certValid', false)}
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-
-                  {entry.odRequested && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span className="small font-semibold">On-Duty (OD) Status:</span>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button 
-                          type="button"
-                          className="ghost-btn small" 
-                          style={{ padding: '6px 12px', fontSize: '0.8rem', background: dec.odGrant ? 'rgba(59, 130, 246, 0.15)' : '', borderColor: dec.odGrant ? '#3b82f6' : '', color: dec.odGrant ? '#3b82f6' : '' }}
-                          onClick={() => setBosaDecisionField(entry.id, 'odGrant', true)}
-                        >
-                          Grant OD
-                        </button>
-                        <button 
-                          type="button"
-                          className="ghost-btn small" 
-                          style={{ padding: '6px 12px', fontSize: '0.8rem', background: !dec.odGrant ? 'rgba(239, 68, 68, 0.15)' : '', borderColor: !dec.odGrant ? '#f87171' : '', color: !dec.odGrant ? '#f87171' : '' }}
-                          onClick={() => setBosaDecisionField(entry.id, 'odGrant', false)}
-                        >
-                          Deny OD
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: 0 }}>
-                    <span className="small font-semibold">BOSA Comment:</span>
-                    <input 
-                      type="text" 
-                      value={dec.bosaComment} 
-                      onChange={(e) => setBosaDecisionField(entry.id, 'bosaComment', e.target.value)} 
-                      placeholder="Optional review comment..."
-                      style={{ padding: '8px 12px', fontSize: '0.85rem' }}
-                    />
-                  </label>
-                </div>
-
-                <div className="meta">
+                {entry.odComment && <p className="small">Student Comment: {entry.odComment}</p>}
+                {entry.bosaComment && <p className="small">BOSA Comment: {entry.bosaComment}</p>}
+                <p className="small font-bold text-teal-400 mt-2">BOSA Member Decision: Certificate Approved • OD {entry.odGranted ? 'Granted' : 'Denied'}</p>
+                <div className="meta mt-4">
                   <button className="primary-btn" onClick={async () => {
                     try {
-                      const finalDecision = dec.certValid ? 'approved' : 'rejected';
-                      await bosaProcessApplication(entry.id, finalDecision, dec.odGrant, dec.bosaComment);
-                      setMessage(dec.certValid ? 'Application approved and forwarded to HoD.' : 'Application rejected and completed.');
+                      await hodProcessApplication(entry.id, 'approved', Boolean(entry.odGranted));
+                      setMessage('Application approved by HoD.');
                     } catch (err) {
-                      setMessage(err.message || 'BOSA Member approval failed');
+                      setMessage(err.message || 'HoD approval failed');
                     }
-                  }}>Approve & Forward</button>
+                  }}>Final Approve</button>
                   <button className="danger-btn" onClick={async () => {
                     try {
-                      await bosaProcessApplication(entry.id, 'rejected', false, dec.bosaComment);
-                      setMessage('Application rejected.');
+                      await hodProcessApplication(entry.id, 'rejected', false);
+                      setMessage('Application rejected by HoD.');
                     } catch (err) {
-                      setMessage(err.message || 'BOSA Member rejection failed');
+                      setMessage(err.message || 'HoD rejection failed');
                     }
-                  }}>Reject Submission</button>
+                  }}>Reject</button>
                 </div>
               </div>
-            );
-          }) : <p>No requests pending at BOSA Member stage.</p>}
-        </div>
-        <div className="panel" style={{ padding: 16 }}>
-          <h3>HoD Pending Queue</h3>
-          {pendingHod.length ? pendingHod.map((entry) => (
-            <div className="queue-card" key={entry.id} style={{ marginBottom: 12 }}>
-              <h4>{entry.studentName}</h4>
-              <p className="small muted">{entry.regNumber} • {entry.year} • {entry.semester}</p>
-              <p className="small">Category: {entry.category}</p>
-              <p className="small">
-                Attachment:{' '}
-                {entry.attachmentUrl ? (
-                  <a href={entry.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                    {entry.attachmentName || 'View Document'}
-                  </a>
-                ) : (
-                  entry.attachmentName || 'No attachment'
-                )}
-              </p>
-              {entry.odComment && <p className="small">Student Comment: {entry.odComment}</p>}
-              {entry.bosaComment && <p className="small">BOSA Comment: {entry.bosaComment}</p>}
-              <p className="small">BOSA Member Decision: Certificate Approved • OD {entry.odGranted ? 'Granted' : 'Denied'}</p>
-              <div className="meta">
-                <button className="primary-btn" onClick={async () => {
-                  try {
-                    await hodProcessApplication(entry.id, 'approved', Boolean(entry.odGranted));
-                    setMessage('Application approved by HoD.');
-                  } catch (err) {
-                    setMessage(err.message || 'HoD approval failed');
-                  }
-                }}>Final Approve</button>
-                <button className="danger-btn" onClick={async () => {
-                  try {
-                    await hodProcessApplication(entry.id, 'rejected', false);
-                    setMessage('Application rejected by HoD.');
-                  } catch (err) {
-                    setMessage(err.message || 'HoD rejection failed');
-                  }
-                }}>Reject</button>
-              </div>
-            </div>
-          )) : <p>No requests forwarded to HoD yet.</p>}
-        </div>
-      </section>
+            )) : <p>No requests forwarded to HoD yet.</p>}
+          </section>
+        </>
+      )}
     </div>
   );
 }

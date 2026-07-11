@@ -10,10 +10,14 @@ import {
   submitApplication,
   listApplicationsForUser,
   listApplicationsByStatus,
+  listApplicationsForBosa,
+  listApplicationsForHod,
   getNotifications,
   bosaProcessApplication,
   hodProcessApplication,
   updateFacultyProfile,
+  registerBosaMember,
+  changeFacultyPassword,
 } from './mongo/controllers.js';
 
 const app = express();
@@ -59,6 +63,33 @@ app.post('/auth/login/faculty', async (req, res) => {
   }
 });
 
+app.post('/auth/faculty', async (req, res) => {
+  try {
+    const result = await loginFaculty(req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post('/auth/register/bosa', requireAuth, async (req, res) => {
+  try {
+    const result = await registerBosaMember(req.user, req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
+app.post('/auth/change-password', requireAuth, async (req, res) => {
+  try {
+    const result = await changeFacultyPassword(req.user, req.body);
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e?.message || String(e) });
+  }
+});
+
 app.post('/applications', requireAuth, async (req, res) => {
   try {
     const result = await submitApplication(req.user, req.body);
@@ -71,10 +102,16 @@ app.post('/applications', requireAuth, async (req, res) => {
 app.get('/applications', requireAuth, async (req, res) => {
   try {
     const { userUid, status } = req.query;
-    const result =
-      status
+    let result;
+    if (req.user.role === 'dean' || req.user.role === 'bosa') {
+      result = await listApplicationsForBosa();
+    } else if (req.user.role === 'hod') {
+      result = await listApplicationsForHod();
+    } else {
+      result = status
         ? await listApplicationsByStatus(String(status))
         : await listApplicationsForUser(String(userUid || req.user.uid));
+    }
     res.json(result);
   } catch (e) {
     res.status(400).json({ ok: false, error: e?.message || String(e) });

@@ -84,3 +84,10 @@ export async function updateFacultyProfile(payload) {
   return authedFetch('/faculty/profile', { method: 'POST', body: JSON.stringify(payload) });
 }
 
+export async function registerBosaMember(payload) {
+  return authedFetch('/auth/register/bosa', { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function changeFacultyPassword(payload) {
+  return authedFetch('/auth/change-password', { method: 'POST', body: JSON.stringify(payload) });
+}
