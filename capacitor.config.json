@@ -1,0 +1,8 @@
+{
+  "appId": "com.itcertiod.app",
+  "appName": "ITCertiOD",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

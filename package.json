@@ -1,0 +1,67 @@
+{
+  "name": "itcertiod",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "vite --host 0.0.0.0 --port 3000",
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://127.0.0.1:3000 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:3000 electron .\"",
+    "electron:pack": "npm run build && electron-builder --win nsis",
+    "android:add": "cap add android",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "test": "node --test",
+    "db:seed": "node tools/seedMongo.js",
+    "mongo:dev": "node server/index.js"
+  },
+  "build": {
+    "appId": "com.itcertiod.desktop",
+    "productName": "ITCertiOD",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
+    "bcrypt": "^6.0.0",
+    "concurrently": "^10.0.3",
+    "cors": "^2.8.6",
+    "cross-env": "^10.1.0",
+    "cloudinary": "^2.5.1",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
+    "dotenv": "^16.4.5",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.23.0",
+    "mongodb": "^7.5.0",
+    "react": "^18.3.1",
+    "react-datepicker": "^9.1.0",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.1",
+    "sweetalert2": "^11.26.25",
+    "wait-on": "^9.0.10"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.5.2",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^3.4.17",
+    "vite": "^5.4.10"
+  }
+}
+

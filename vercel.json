@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/auth/(.*)",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/applications(.*)",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/notifications(.*)",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/faculty/profile",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/health",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
