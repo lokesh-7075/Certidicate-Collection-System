@@ -1,43 +1,29 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "server/index.js",
-      "use": "@vercel/node"
+      "source": "/auth/(.*)",
+      "destination": "/api"
     },
     {
-      "src": "index.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/auth/(.*)",
-      "dest": "server/index.js"
+      "source": "/applications(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/applications(.*)",
-      "dest": "server/index.js"
+      "source": "/notifications(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/notifications(.*)",
-      "dest": "server/index.js"
+      "source": "/faculty/profile",
+      "destination": "/api"
     },
     {
-      "src": "/faculty/profile",
-      "dest": "server/index.js"
+      "source": "/health",
+      "destination": "/api"
     },
     {
-      "src": "/health",
-      "dest": "server/index.js"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/((?!api|assets|favicon.ico).*)",
+      "destination": "/index.html"
     }
   ]
 }
