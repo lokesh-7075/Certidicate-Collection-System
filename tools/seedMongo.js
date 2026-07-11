@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { MongoClient, ObjectId } from 'mongodb';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import dns from 'dns';
 
 // Set public DNS servers to resolve SRV records properly in Node.js
