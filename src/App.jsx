@@ -33,6 +33,44 @@ function mapUserProfile(profile, uid) {
   };
 }
 
+function getAvatarUrl(user) {
+  if (!user) return '';
+  const img = user.profileImage;
+  if (!img || img.includes('ui-avatars.com') || img.includes('initials/svg')) {
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name || 'user')}`;
+  }
+  return img;
+}
+
+const renderAttachmentPreview = (url, name) => {
+  if (!url) return null;
+  const isImage = url.startsWith('data:image') || 
+                  url.match(/\.(jpeg|jpg|gif|png|webp)/i) || 
+                  url.includes('cloudinary.com');
+                  
+  return (
+    <div style={{ marginTop: 12, marginBottom: 12 }}>
+      {isImage ? (
+        <div style={{ margin: '8px 0' }}>
+          <img 
+            src={url} 
+            alt={name || 'Attachment Preview'} 
+            style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '12px', objectFit: 'contain', border: '1px solid rgba(255,255,255,0.1)' }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        </div>
+      ) : null}
+      <div style={{ marginTop: 6 }}>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline small" style={{ fontSize: '0.85rem' }}>
+          📎 {name || 'View Attachment Document'}
+        </a>
+      </div>
+    </div>
+  );
+};
+
 function mapApplicationDoc(snapshot) {
   const data = snapshot.data();
   return {
@@ -119,6 +157,7 @@ function App() {
   const [nptelOd, setNptelOd] = useState(false);
 
   const [bosaDecisions, setBosaDecisions] = useState({});
+  const [hodDecisions, setHodDecisions] = useState({});
   const [submitState, setSubmitState] = useState({});
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [newBosaData, setNewBosaData] = useState({ facultyId: '', name: '', password: '', department: 'IT' });
@@ -156,14 +195,12 @@ function App() {
 
         const appsRes = await fetchApplicationsForCurrentUser();
         const apps = appsRes?.applications || [];
-        const roleLower = String(state.currentUser.role || '').toLowerCase();
+        const roleLower = String(state.currentRole || '').toLowerCase();
 
         if (roleLower === 'student') {
           setStudentSubmissions(apps);
-        } else if (roleLower === 'dean') {
-          setFacultyApplications(apps.filter((a) => a.status === 'pending'));
-        } else if (roleLower === 'hod') {
-          setFacultyApplications(apps.filter((a) => a.status === 'forwarded'));
+        } else if (roleLower === 'dean' || roleLower === 'hod') {
+          setFacultyApplications(apps);
         } else {
           // fallback
           setStudentSubmissions(apps);
@@ -213,8 +250,25 @@ function App() {
   const setBosaDecisionField = (appId, field, value) => {
     setBosaDecisions(prev => ({
       ...prev,
-      [appId]: {
+      [prev[appId] ? appId : appId]: { // safe mapping
         ...getBosaDecision(appId),
+        [field]: value
+      }
+    }));
+  };
+
+  const getHodDecision = (appId, odGranted) => {
+    return hodDecisions[appId] || {
+      odGrant: odGranted ? true : false,
+      hodComment: ''
+    };
+  };
+
+  const setHodDecisionField = (appId, field, value) => {
+    setHodDecisions(prev => ({
+      ...prev,
+      [appId]: {
+        ...getHodDecision(appId, prev[appId]?.odGrant !== undefined ? prev[appId].odGrant : odGranted),
         [field]: value
       }
     }));
@@ -660,10 +714,10 @@ function App() {
             <div>
               <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                 <img 
-                  src={state.currentUser.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}`}
+                  src={getAvatarUrl(state.currentUser)}
                   alt="Profile" 
                   style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}
-                  onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
+                  onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
                 />
                 <div>
                   <h2>Welcome back, {state.currentUser.name}!</h2>
@@ -759,24 +813,42 @@ function App() {
         <section id="student-repository" className="panel" style={{ padding: 16, marginBottom: 28 }}>
           <h3>Certificate Repository</h3>
           <div className="grid-3" style={{ marginTop: 20 }}>
-            {studentViews.length ? studentViews.map((entry) => (
-              <div className="queue-card" key={entry.id}>
-                <h4>{entry.category.toUpperCase()}</h4>
-                <p className="small muted" style={{ margin: '8px 0' }}>{entry.details.eventName || entry.details.field || entry.details.subjectName || 'Achievement'}</p>
-                <p className="small">
-                  Attachment:{' '}
-                  {entry.attachmentUrl ? (
-                    <a href={entry.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                      {entry.attachmentName || 'View Document'}
-                    </a>
-                  ) : (
-                    entry.attachmentName || 'No attachment'
+            {studentViews.length ? studentViews.map((entry) => {
+              const fromDateVal = entry.fromDate || entry.details?.fromDate;
+              const toDateVal = entry.toDate || entry.details?.toDate;
+              const detailsText = entry.details?.eventName || entry.details?.field || entry.details?.subjectName || '';
+              const subDetailsText = entry.details?.domain || entry.details?.type || '';
+              return (
+                <div className="queue-card" key={entry.id}>
+                  <h4>{entry.category.toUpperCase()}</h4>
+                  {detailsText && <p className="small muted" style={{ margin: '8px 0' }}>{detailsText} {subDetailsText ? `(${subDetailsText})` : ''}</p>}
+                  {(fromDateVal || toDateVal) && (
+                    <p className="small" style={{ marginBottom: 8 }}><strong>Date Range:</strong> {fromDateVal || 'N/A'} to {toDateVal || 'N/A'}</p>
                   )}
-                </p>
-                <p className="small" style={{ marginBottom: 16 }}>OD: {entry.odRequested ? 'Requested' : 'Not requested'}</p>
-                <span className={`badge ${entry.status}`}>{entry.status}</span>
-              </div>
-            )) : <p className="muted">No submissions yet.</p>}
+                  {renderAttachmentPreview(entry.attachmentUrl, entry.attachmentName)}
+                  <p className="small" style={{ marginBottom: 8 }}>OD Request: {entry.odRequested ? 'Requested' : 'Not requested'}</p>
+                  
+                  {/* Review / Verification details */}
+                  {entry.bosaDecision && (
+                    <div className="small" style={{ margin: '8px 0', padding: 8, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <strong>BOSA Review:</strong> {entry.bosaDecision === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                      {entry.bosaComment && <p className="muted" style={{ margin: '4px 0 0 0' }}>Comment: "{entry.bosaComment}"</p>}
+                    </div>
+                  )}
+                  {entry.hodDecision && (
+                    <div className="small" style={{ margin: '8px 0', padding: 8, borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <strong>HoD Review:</strong> {entry.hodDecision === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                      {entry.odRequested && (
+                        <p style={{ margin: '4px 0 0 0' }}>OD Status: {entry.odGranted ? '🟢 Granted' : '🔴 Denied'}</p>
+                      )}
+                      {entry.hodComment && <p className="muted" style={{ margin: '4px 0 0 0' }}>Comment: "{entry.hodComment}"</p>}
+                    </div>
+                  )}
+
+                  <span className={`badge ${entry.status}`} style={{ marginTop: 12 }}>{entry.status}</span>
+                </div>
+              );
+            }) : <p className="muted">No submissions yet.</p>}
           </div>
         </section>
       </div>
@@ -797,20 +869,20 @@ function App() {
           </div>
           <div className="mx-auto text-center flex-1">
             <div className="text-2xl font-bold text-blue-300" style={{textShadow: '0 0 10px rgba(59, 130, 246, 0.6)'}}>
-              {state.currentUser.role === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}
+              {state.currentRole === 'dean' ? 'BOSA Dashboard' : 'HoD Dashboard'}
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <img 
-            src={state.currentUser.profileImage || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}`}
+            src={getAvatarUrl(state.currentUser)}
             alt="Profile" 
             title="Edit Profile & Settings"
             onClick={() => setShowSettingsModal(true)}
             style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.3)', cursor: 'pointer', transition: 'transform 0.2s' }}
             onMouseOver={(e) => e.target.style.transform = 'scale(1.1)'}
             onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-            onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
+            onError={(e) => { e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(state.currentUser.name)}` }}
           />
           <button className="notice-btn" title="Notifications">🔔 {notifications.length}</button>
           <button className="ghost-btn" onClick={logout}>Logout</button>
@@ -932,23 +1004,31 @@ function App() {
             <h3>BOSA Member Pending Requests</h3>
             {pendingBosa.length ? pendingBosa.map((entry) => {
               const dec = getBosaDecision(entry.id, entry.odRequested);
+              const fromDateVal = entry.fromDate || entry.details?.fromDate;
+              const toDateVal = entry.toDate || entry.details?.toDate;
+              const detailsText = entry.details?.eventName || entry.details?.field || entry.details?.subjectName || '';
+              const subDetailsText = entry.details?.domain || entry.details?.type || '';
               return (
                 <div className="queue-card card-gradient-blue" key={entry.id} style={{ marginBottom: 12 }}>
-                  <h4>{entry.studentName}</h4>
-                  <p className="small muted">{entry.regNumber} • {entry.year} • {entry.semester}</p>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 14 }}>
+                    <img 
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(entry.studentName)}`}
+                      alt={entry.studentName} 
+                      style={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}
+                    />
+                    <div>
+                      <h4 style={{ margin: 0 }}>{entry.studentName}</h4>
+                      <p className="small muted" style={{ margin: '4px 0 0 0' }}>{entry.regNumber} • {entry.year} • {entry.semester}</p>
+                    </div>
+                  </div>
                   <p className="small">Category: {entry.category.toUpperCase()}</p>
+                  {detailsText && <p className="small"><strong>Details:</strong> {detailsText} {subDetailsText ? `(${subDetailsText})` : ''}</p>}
+                  {(fromDateVal || toDateVal) && (
+                    <p className="small"><strong>Date Range:</strong> {fromDateVal || 'N/A'} to {toDateVal || 'N/A'}</p>
+                  )}
                   <p className="small">OD Requested: {entry.odRequested ? 'Yes' : 'No'}</p>
                   {entry.odRequested ? <p className="small">Comment: {entry.odComment || 'No comment provided.'}</p> : null}
-                  <p className="small">
-                    Attachment:{' '}
-                    {entry.attachmentUrl ? (
-                      <a href={entry.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                        {entry.attachmentName || 'View Document'}
-                      </a>
-                    ) : (
-                      entry.attachmentName || 'No attachment'
-                    )}
-                  </p>
+                  {renderAttachmentPreview(entry.attachmentUrl, entry.attachmentName)}
                   
                   {/* BOSA Decision Panel */}
                   <div style={{ display: 'grid', gap: 12, margin: '16px 0', padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -1050,44 +1130,97 @@ function App() {
           </div>
           <section className="panel" style={{ padding: 16 }}>
             <h3>HoD Pending Queue</h3>
-            {pendingHod.length ? pendingHod.map((entry) => (
-              <div className="queue-card card-gradient-teal" key={entry.id} style={{ marginBottom: 12 }}>
-                <h4>{entry.studentName}</h4>
-                <p className="small muted">{entry.regNumber} • {entry.year} • {entry.semester}</p>
-                <p className="small">Category: {entry.category}</p>
-                <p className="small">
-                  Attachment:{' '}
-                  {entry.attachmentUrl ? (
-                    <a href={entry.attachmentUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                      {entry.attachmentName || 'View Document'}
-                    </a>
-                  ) : (
-                    entry.attachmentName || 'No attachment'
+            {pendingHod.length ? pendingHod.map((entry) => {
+              const dec = getHodDecision(entry.id, entry.odGranted);
+              const fromDateVal = entry.fromDate || entry.details?.fromDate;
+              const toDateVal = entry.toDate || entry.details?.toDate;
+              const detailsText = entry.details?.eventName || entry.details?.field || entry.details?.subjectName || '';
+              const subDetailsText = entry.details?.domain || entry.details?.type || '';
+              return (
+                <div className="queue-card card-gradient-teal" key={entry.id} style={{ marginBottom: 12 }}>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 14 }}>
+                    <img 
+                      src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(entry.studentName)}`}
+                      alt={entry.studentName} 
+                      style={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)', flexShrink: 0 }}
+                    />
+                    <div>
+                      <h4 style={{ margin: 0 }}>{entry.studentName}</h4>
+                      <p className="small muted" style={{ margin: '4px 0 0 0' }}>{entry.regNumber} • {entry.year} • {entry.semester}</p>
+                    </div>
+                  </div>
+                  <p className="small">Category: {entry.category}</p>
+                  {detailsText && <p className="small"><strong>Details:</strong> {detailsText} {subDetailsText ? `(${subDetailsText})` : ''}</p>}
+                  {(fromDateVal || toDateVal) && (
+                    <p className="small"><strong>Date Range:</strong> {fromDateVal || 'N/A'} to {toDateVal || 'N/A'}</p>
                   )}
-                </p>
-                {entry.odComment && <p className="small">Student Comment: {entry.odComment}</p>}
-                {entry.bosaComment && <p className="small">BOSA Comment: {entry.bosaComment}</p>}
-                <p className="small font-bold text-teal-400 mt-2">BOSA Member Decision: Certificate Approved • OD {entry.odGranted ? 'Granted' : 'Denied'}</p>
-                <div className="meta mt-4">
-                  <button className="primary-btn" onClick={async () => {
-                    try {
-                      await hodProcessApplication(entry.id, 'approved', Boolean(entry.odGranted));
-                      setMessage('Application approved by HoD.');
-                    } catch (err) {
-                      setMessage(err.message || 'HoD approval failed');
-                    }
-                  }}>Final Approve</button>
-                  <button className="danger-btn" onClick={async () => {
-                    try {
-                      await hodProcessApplication(entry.id, 'rejected', false);
-                      setMessage('Application rejected by HoD.');
-                    } catch (err) {
-                      setMessage(err.message || 'HoD rejection failed');
-                    }
-                  }}>Reject</button>
+                  {renderAttachmentPreview(entry.attachmentUrl, entry.attachmentName)}
+                  {entry.odComment && <p className="small">Student Comment: {entry.odComment}</p>}
+                  {entry.bosaComment && <p className="small">BOSA Comment: {entry.bosaComment}</p>}
+                  
+                  {/* HoD Decision overrides and comment inputs */}
+                  <div style={{ display: 'grid', gap: 12, margin: '16px 0', padding: 12, borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <p className="small font-bold text-teal-400" style={{ margin: 0 }}>
+                      BOSA Member Recommendation: Certificate Approved • OD {entry.odGranted ? 'Granted' : 'Denied'}
+                    </p>
+                    
+                    {entry.odRequested && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span className="small font-semibold">Final On-Duty (OD) Status:</span>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button 
+                            type="button"
+                            className="ghost-btn small" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', background: dec.odGrant ? 'rgba(59, 130, 246, 0.15)' : '', borderColor: dec.odGrant ? '#3b82f6' : '', color: dec.odGrant ? '#3b82f6' : '' }}
+                            onClick={() => setHodDecisionField(entry.id, 'odGrant', true)}
+                          >
+                            Grant OD
+                          </button>
+                          <button 
+                            type="button"
+                            className="ghost-btn small" 
+                            style={{ padding: '6px 12px', fontSize: '0.8rem', background: !dec.odGrant ? 'rgba(239, 68, 68, 0.15)' : '', borderColor: !dec.odGrant ? '#f87171' : '', color: !dec.odGrant ? '#f87171' : '' }}
+                            onClick={() => setHodDecisionField(entry.id, 'odGrant', false)}
+                          >
+                            Deny OD
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: 0 }}>
+                      <span className="small font-semibold">HoD Review Comment:</span>
+                      <input 
+                        type="text" 
+                        value={dec.hodComment} 
+                        onChange={(e) => setHodDecisionField(entry.id, 'hodComment', e.target.value)} 
+                        placeholder="Optional HoD feedback/review comment..."
+                        style={{ padding: '8px 12px', fontSize: '0.85rem' }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="meta mt-4">
+                    <button className="primary-btn" onClick={async () => {
+                      try {
+                        await hodProcessApplication(entry.id, 'approved', Boolean(dec.odGrant), dec.hodComment);
+                        setMessage('Application approved by HoD.');
+                      } catch (err) {
+                        setMessage(err.message || 'HoD approval failed');
+                      }
+                    }}>Final Approve</button>
+                    <button className="danger-btn" onClick={async () => {
+                      try {
+                        await hodProcessApplication(entry.id, 'rejected', false, dec.hodComment);
+                        setMessage('Application rejected by HoD.');
+                      } catch (err) {
+                        setMessage(err.message || 'HoD rejection failed');
+                      }
+                    }}>Reject</button>
+                  </div>
                 </div>
-              </div>
-            )) : <p>No requests forwarded to HoD yet.</p>}
+              );
+            }) : <p>No requests forwarded to HoD yet.</p>}
           </section>
         </>
       )}

@@ -253,7 +253,7 @@ function formatApplication(a) {
     odComment: a.odComment || '',
     bosaDecision: a.bosaDecision || null,
     hodDecision: a.hodDecision || null,
-    odGranted: a.odGranted || null,
+    odGranted: a.odGranted !== undefined ? a.odGranted : null,
     hodDecisionLabel: a.hodDecision || null,
   };
 }

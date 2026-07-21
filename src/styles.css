@@ -358,6 +358,11 @@ label {
   border: 1px solid rgba(245, 158, 11, 0.25);
   color: #fbbf24;
 }
+.badge.forwarded {
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+}
 .badge.approved {
   background: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.25);

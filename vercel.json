@@ -3,23 +3,23 @@
   "rewrites": [
     {
       "source": "/auth/(.*)",
-      "destination": "/api"
+      "destination": "/api/index.js"
     },
     {
       "source": "/applications(.*)",
-      "destination": "/api"
+      "destination": "/api/index.js"
     },
     {
       "source": "/notifications(.*)",
-      "destination": "/api"
+      "destination": "/api/index.js"
     },
     {
       "source": "/faculty/profile",
-      "destination": "/api"
+      "destination": "/api/index.js"
     },
     {
       "source": "/health",
-      "destination": "/api"
+      "destination": "/api/index.js"
     },
     {
       "source": "/((?!api|assets|favicon.ico).*)",
