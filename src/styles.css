@@ -211,13 +211,51 @@ label {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+@media (max-width: 1200px) {
+  .grid-3, .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1024px) {
   .topbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 16px;
   }
-  .grid-2, .grid-3, .form-grid {
+  .grid-2 {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-3, .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .shell {
+    padding: 16px 12px;
+  }
+  .profile-card, .form-card, .panel, .queue-card, .card {
+    padding: 20px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 20px;
+  }
+  .auth-card {
+    padding: 24px 16px !important;
+  }
+  .profile-card div[style*="display: flex"] {
+    flex-direction: column !important;
+    text-align: center;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+  .profile-card div[style*="display: flex"] div {
+    text-align: center;
   }
 }
 
